@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.4.22 <0.9.0;
+pragma solidity ^0.8.0;
 
 contract WhitelistOracle {
   event ManagerStatusChanged(
@@ -104,7 +104,7 @@ contract WhitelistOracle {
       bool _status, 
       uint256 _nonce,
       uint256 _expiried,
-      bytes memory _signature
+      bytes calldata _signature
     ) external {
     require(nonce[_account] == _nonce, "NONCE_INVALID");
     require(_expiried >= block.timestamp, "SIGNATURE_EXPIRIED");
