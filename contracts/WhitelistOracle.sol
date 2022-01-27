@@ -52,9 +52,10 @@ contract WhitelistOracle {
 
   function getMessageHash(
     address _account,
-    bool _status
+    bool _status,
+    uint256 _expiried
   ) public pure returns (bytes32) {
-    return keccak256(abi.encodePacked(_account, _status));
+    return keccak256(abi.encodePacked(_account, _status, _expiried));
   }
 
   function getEthSignedMessageHash(bytes32 _messageHash)
@@ -102,11 +103,13 @@ contract WhitelistOracle {
       address _account, 
       bool _status, 
       uint256 _nonce,
+      uint256 _expiried,
       bytes memory _signature
     ) external {
     require(nonce[_account] == _nonce, "NONCE_INVALID");
+    require(_expiried >= block.timestamp, "SIGNATURE_EXPIRIED");
 
-    bytes32 messageHash = getMessageHash(_account, _status);
+    bytes32 messageHash = getMessageHash(_account, _status, _expiried);
     bytes32 ethSignedMessageHash = getEthSignedMessageHash(messageHash);
 
     require(
