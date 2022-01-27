@@ -9,7 +9,8 @@ contract WhitelistOracle {
 
   event VerifyStatusChanged(
     address account,
-    bool status
+    bool status,
+    uint256 nonce
   );
 
   address public owner = msg.sender;
@@ -46,15 +47,14 @@ contract WhitelistOracle {
 
   function _verifiy(address _account, bool _status) private {
     verified[_account] = _status;
-    emit VerifyStatusChanged(_account, _status);
+    emit VerifyStatusChanged(_account, _status, nonce[_account]++);
   }
 
   function getMessageHash(
     address _account,
-    bool _status,
-    address _manager
+    bool _status
   ) public pure returns (bytes32) {
-    return keccak256(abi.encodePacked(_account, _status, _manager));
+    return keccak256(abi.encodePacked(_account, _status));
   }
 
   function getEthSignedMessageHash(bytes32 _messageHash)
@@ -88,7 +88,7 @@ contract WhitelistOracle {
         uint8 v
     )
   {
-    require(sig.length == 65, "invalid signature length");
+    require(sig.length == 65, "SIGNATURE_LEN_INVALID");
 
     assembly {
         r := mload(add(sig, 32))
@@ -98,25 +98,22 @@ contract WhitelistOracle {
 
   }
 
-
   function delegatedVerify(
       address _account, 
       bool _status, 
-      address _manager,
       uint256 _nonce,
       bytes memory _signature
     ) external {
     require(nonce[_account] == _nonce, "NONCE_INVALID");
 
-    bytes32 messageHash = getMessageHash(_account, _status, _manager);
+    bytes32 messageHash = getMessageHash(_account, _status);
     bytes32 ethSignedMessageHash = getEthSignedMessageHash(messageHash);
 
     require(
-      recoverSigner(ethSignedMessageHash, _signature) == _manager,
-      "Invalid signature"
+      managers[recoverSigner(ethSignedMessageHash, _signature)],
+      "SIGNATURE_INVALID"
     );
 
-    nonce[_account]++;
     _verifiy(_account, _status);
   }
 }
